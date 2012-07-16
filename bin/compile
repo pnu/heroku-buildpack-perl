@@ -38,6 +38,8 @@ if [ -e carton.lock ]; then
 else
   echo "-----> Installing dependencies (cpanm)"
   cpanm --installdeps . 2>&1 | indent
+  echo "-----> cpanm build.log
+  cat /app/.cpanm/build.log | indent
 fi
 
 echo "-----> Installing Starman"
