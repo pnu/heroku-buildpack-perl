@@ -17,8 +17,7 @@ fi
 
 cd $BUILD_DIR
 
-if [ -e local.url ]; then
-  LOCALURL=`cat local.url`
+if [ ${LOCALURL:+x} ]; then
   echo "-----> Extracting prebuilt dependencies from $LOCALURL"
   mkdir -p local
   curl --silent $LOCALURL | tar -xz -C local 2>&1 | indent
