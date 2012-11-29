@@ -27,6 +27,12 @@ echo "-----> Bootstrapping cpanm and local::lib"
 curl --silent $CPANMURL | perl - --local-lib local App::cpanminus local::lib 2>&1 | indent
 eval $(perl -Ilocal/lib/perl5 -Mlocal::lib=local 2>&1 | indent)
 
+if [ -e local.bundle ]; then
+  echo "-----> Installing local.bundle modules (cpanm)"
+  cat local.bundle | xargs cpanm 2>&1 | indent
+  cp /app/.cpanm/build.log local/bundle-build.log 2>&1 | indent
+fi
+
 if [ -e carton.lock ]; then
   if ! command -v carton >/dev/null 2>&1; then
     echo "-----> Installing carton"
