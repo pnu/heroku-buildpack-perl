@@ -17,6 +17,29 @@ fi
 
 cd $BUILD_DIR
 
+if [ -e vendor.url ]; then
+  VENDORURL=`cat vendor.url`
+fi
+
+if [ ${VENDORURL:+x} ]; then
+  echo "-----> Extracting vendor from $VENDORURL"
+  mkdir -p vendor
+  curl --silent $VENDORURL | tar -xz -C vendor 2>&1 | indent
+fi
+
+if [ -d vendor ]; then
+  echo "-----> Configuring compile path env for vendor"
+  export C_INCLUDE_PATH=`pwd`/vendor/include
+  export LIBRARY_PATH=`pwd`/vendor/lib
+  export LD_LIBRARY_PATH=`pwd`/vendor/lib
+  export PERL5LIB=`pwd`/vendor/lib/perl5
+  export PATH=`pwd`/vendor/bin:$PATH
+fi
+
+if [ -e local.url ]; then
+  LOCALURL=`cat local.url`
+fi
+
 if [ ${LOCALURL:+x} ]; then
   echo "-----> Extracting prebuilt dependencies from $LOCALURL"
   mkdir -p local
@@ -26,6 +49,9 @@ fi
 echo "-----> Bootstrapping cpanm and local::lib"
 curl --silent $CPANMURL | perl - --local-lib local App::cpanminus local::lib 2>&1 | indent
 eval $(perl -Ilocal/lib/perl5 -Mlocal::lib=local 2>&1 | indent)
+
+echo "-----> Saving build environment to local/build.env"
+set >local/build.env
 
 if [ -e local.bundle ]; then
   echo "-----> Installing local.bundle modules (cpanm)"
