@@ -9,9 +9,13 @@ Usage
 Example usage:
 
     $ ls
-    Makefile.PL
+    cpanfile
     app.psgi
     lib/
+
+    $ cat cpanfile
+    requires 'Plack', '1.0000';
+    requires 'DBI', '1.6';
 
     $ heroku create --buildpack http://github.com/pnu/heroku-buildpack-perl.git
 
