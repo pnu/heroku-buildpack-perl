@@ -7,15 +7,17 @@ indent() {
 BUILD_DIR=$1
 CACHE_DIR=$2
 
-CPANMURL='https://raw.github.com/miyagawa/cpanminus/master/cpanm' 
+CPANMURL='https://raw.github.com/miyagawa/cpanminus/master/cpanm'
 export PERL_CPANM_OPT="--quiet --notest"
 
-rm -rf $BUILD_DIR/local
-if [ -d $CACHE_DIR/local ]; then
-  cp -a $CACHE_DIR/local $BUILD_DIR/local
-fi
+CACHED_DIRS="local"
 
+mkdir -p $CACHE_DIR
 cd $BUILD_DIR
+
+for dir in $CACHED_DIRS; do
+  cp -R $CACHE_DIR/$dir . &> /dev/null || true
+done
 
 if [ -e vendor.url ]; then
   VENDORURL=`cat vendor.url`
@@ -75,8 +77,7 @@ fi
 echo "-----> Installing Starman"
 cpanm Starman 2>&1 | indent
 
-if [ -d $BUILD_DIR/local ]; then
-  rm -rf $CACHE_DIR/local
-  mkdir -p $CACHE_DIR
-  cp -a $BUILD_DIR/local $CACHE_DIR/local
-fi
+for dir in $CACHED_DIRS; do
+  rm -rf $CACHE_DIR/$dir
+  cp -R $dir $CACHE_DIR/
+done
