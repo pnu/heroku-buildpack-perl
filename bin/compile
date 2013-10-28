@@ -62,21 +62,24 @@ set >local/build.env
 if [ -e local.bundle ]; then
   echo "-----> Installing local.bundle modules (cpanm)"
   cat local.bundle | xargs cpanm 2>&1 | indent
-  cp /app/.cpanm/build.log local/bundle-build.log 2>&1 | indent
+  mv /app/.cpanm/build.log local/bundle-build.log 2>&1 | indent
 fi
 
-if [ -e carton.lock ]; then
+if [ -e cpanfile.snapshot ]; then
   if ! command -v carton >/dev/null 2>&1; then
     echo "-----> Installing carton"
     cpanm Carton 2>&1 | indent
   fi
   echo "-----> Installing dependencies (carton)"
-  carton install --deploy 2>&1 | indent
-else
-  echo "-----> Installing dependencies (cpanm)"
-  cpanm --installdeps . 2>&1 | indent
-  cp /app/.cpanm/build.log local/build.log 2>&1 | indent
+  carton install --deployment --cached 2>&1 | indent
+  mv /app/.cpanm/build.log local/carton-build.log 2>&1 | indent
+  echo "-----> Removing vendor/cache"
+  rm -rf vendor/cache 2>&1 | indent
 fi
+
+echo "-----> Installing dependencies (cpanm)"
+cpanm --installdeps . 2>&1 | indent
+mv /app/.cpanm/build.log local/cpanm-build.log 2>&1 | indent
 
 echo "-----> Installing Starman"
 cpanm Starman 2>&1 | indent
