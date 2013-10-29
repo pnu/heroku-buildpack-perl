@@ -52,3 +52,12 @@ As an example, here are the steps I've used to bootstrap the libraries for such 
     $ heroku labs:enable user-env-compile
 
 After doing the initial push, you can unset the LOCALURL and disable user-env-compile.
+
+Prebuilt libraries (vulcan)
+---------------------------
+
+This can also be done with `vulcan`:
+
+    $ vulcan build -v -c "rm /app/bin/make; curl -sL http://cpanmin.us | perl - -L /tmp/local --quiet --notest --installdeps ." -p /tmp/local
+
+Set the returned url as heroku config LOCALURL and enable user-env-compile like above.
