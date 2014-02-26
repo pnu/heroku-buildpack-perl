@@ -4,8 +4,19 @@ indent() {
   sed -u 's/^/       /'
 }
 
+export_env_dir() {
+  env_dir=$1
+  if [ -d "$env_dir" ]; then
+    for e in $(ls $env_dir); do
+      export "$e=$(cat $env_dir/$e)"
+      :
+    done
+  fi
+}
+
 BUILD_DIR=$1
 CACHE_DIR=$2
+export_env_dir $3
 BIN_DIR=$(cd $(dirname $0); pwd)
 
 CPANMURL='https://raw.github.com/miyagawa/cpanminus/master/cpanm'
