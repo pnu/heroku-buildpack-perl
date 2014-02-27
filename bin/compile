@@ -39,12 +39,6 @@ status "Saving build environment to .buildpack/build/env"
 rm -rf .buildpack/build 2>&1; mkdir -p .buildpack/build 2>&1
 set >.buildpack/build/env
 
-if [ -e local.bundle ]; then
-  status "Installing local.bundle modules (cpanm)"
-  cat local.bundle | xargs cpanm 2>&1 | indent
-  cp /app/.cpanm/build.log .buildpack/build/bundle.log 2>&1 | indent
-fi
-
 if [ -e cpanfile.snapshot ]; then
   if ! command -v carton >/dev/null 2>&1; then
     status "Installing carton"
