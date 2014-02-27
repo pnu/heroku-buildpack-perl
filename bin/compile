@@ -13,6 +13,11 @@ trap cat_cpanm_build_log ERR
 
 CPANMURL='https://raw.github.com/miyagawa/cpanminus/master/cpanm'
 export PERL_CPANM_OPT="--quiet --notest"
+if [ -e "$ENV_DIR/BUILDPACK_CPAN_MIRROR" ]; then
+  BUILDPACK_CPAN_MIRROR=`cat $ENV_DIR/BUILDPACK_CPAN_MIRROR`
+  status "Using CPAN mirror $BUILDPACK_CPAN_MIRROR"
+  export PERL_CPANM_OPT="$PERL_CPANM_OPT --mirror-only --mirror $BUILDPACK_CPAN_MIRROR"
+fi
 CACHED_DIRS="local"
 
 mkdir -p $CACHE_DIR
