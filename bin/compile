@@ -24,11 +24,8 @@ for dir in $CACHED_DIRS; do
   cp -R $CACHE_DIR/$dir . &> /dev/null || true
 done
 
-if [ -e local.url ]; then
-  LOCALURL=`cat local.url`
-fi
-
-if [ ${LOCALURL:+x} ]; then
+if [ -e "$ENV_DIR/LOCALURL" ]; then
+  LOCALURL=`cat $ENV_DIR/LOCALURL`
   status "Extracting prebuilt dependencies from $LOCALURL"
   mkdir -p local
   curl --silent $LOCALURL | tar -xz -C local 2>&1 | indent

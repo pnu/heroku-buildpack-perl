@@ -49,9 +49,8 @@ As an example, here are the steps I've used to bootstrap the libraries for such 
     $ heroku run 'curl -sL https://raw.github.com/pnu/heroku-vendor-cpanfile/master/build | CPANFILE=https://raw.github.com/gist/3713534/7430a2eab5ac6f959d69aa3042052b417e5d27ac/cpanfile bash'
 
     $ heroku config:set LOCALURL=http://zzz.s3.amazonaws.com/local-nnn.tar.gz
-    $ heroku labs:enable user-env-compile
 
-After doing the initial push, you can unset the LOCALURL and disable user-env-compile.
+After doing the initial push, you can unset the LOCALURL.
 
 Prebuilt libraries (vulcan)
 ---------------------------
@@ -60,4 +59,4 @@ This can also be done with `vulcan`:
 
     $ vulcan build -v -c "rm /app/bin/make; curl -sL http://cpanmin.us | perl - -L /tmp/local --quiet --notest --installdeps ." -p /tmp/local
 
-Set the returned url as heroku config LOCALURL and enable user-env-compile like above.
+Set the returned url as heroku config LOCALURL.
