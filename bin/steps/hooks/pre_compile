@@ -3,7 +3,7 @@
 ENV_DIR=$1
 
 if [ -f bin/pre_compile ]; then
-    echo "-----> Running pre-compile hook"
+    status "Running pre-compile hook"
     chmod +x bin/pre_compile
     bin/pre_compile $ENV_DIR
 fi
