@@ -35,10 +35,6 @@ status "Bootstrapping cpanm and local::lib"
 curl --silent $CPANMURL | perl - --local-lib local App::cpanminus local::lib 2>&1 | indent
 eval $(perl -Ilocal/lib/perl5 -Mlocal::lib=local 2>&1 | indent)
 
-status "Saving build environment to .buildpack/build/env"
-rm -rf .buildpack/build 2>&1; mkdir -p .buildpack/build 2>&1
-set >.buildpack/build/env
-
 if [ -e cpanfile.snapshot ]; then
   if ! command -v carton >/dev/null 2>&1; then
     status "Installing carton"
@@ -46,14 +42,11 @@ if [ -e cpanfile.snapshot ]; then
   fi
   status "Installing dependencies (carton)"
   carton install --deployment --cached 2>&1 | indent
-  cp /app/.cpanm/build.log .buildpack/build/carton.log 2>&1 | indent
-  status "Removing vendor/cache"
-  rm -rf vendor/cache 2>&1 | indent
+  rm -rf vendor/cache 2>&1
 fi
 
 status "Installing dependencies (cpanm)"
 cpanm --installdeps . 2>&1 | indent
-cp /app/.cpanm/build.log .buildpack/build/cpanm.log 2>&1 | indent
 
 status "Installing Starman"
 cpanm Starman 2>&1 | indent
