@@ -33,6 +33,32 @@ Libraries
 
 Dependencies can be declared using `cpanfile` or traditional `Makefile.PL` and `Build.PL`, and the buildpack will install these dependencies using [cpanm](http://cpanmin.us) into `./local` directory.
 
+Perl version
+------------
+
+Perl versions can be specified with `.perl-version` file a la plenv.
+
+    $ echo 5.18.2 > .perl-version
+    $ git add .perl-version
+    $ git commit -m 'use 5.18.2'
+
+By default the system perl is used.
+
+Compiling perl
+--------------
+
+Script `support/perl-build.sh` can be used to build your own perl versions.
+The build script runs on Heroku, and uploads the compiled package to a S3 bucket.
+S3 credentials, bucket name and perl version are specified in the environment.
+
+    $ heroku create     # create a build server, eg. your-app-1234
+    $ heroku config:set AWS_ACCESS_KEY_ID="xxx" AWS_SECRET_ACCESS_KEY="yyy" S3_BUCKET_NAME="heroku-buildpack-perl" --app your-app-1234
+    $ heroku run 'curl -sL https://raw.github.com/pnu/heroku-buildpack-perl/master/support/perl-build.sh | PERL_VERSION=5.18.2 bash' --app your-app-1234
+    [...]
+    $ heroku destroy --app your-app-1234 --confirm your-app-1234
+
+You can use the same build server to build multiple perl versions concurrently.
+
 Prebuilt libraries
 ------------------
 

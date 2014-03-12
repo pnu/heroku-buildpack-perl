@@ -10,9 +10,20 @@ BUILDPACK_DIR=$(cd $(dirname $0); cd ..; pwd)
 
 source $BUILDPACK_DIR/bin/common.sh
 trap cat_cpanm_build_log ERR
+mkdir -p $BUILD_DIR/.profile.d
 
+PERLURL='https://heroku-buildpack-perl.s3.amazonaws.com'
 CPANMURL='https://raw.github.com/miyagawa/cpanminus/master/cpanm'
 export PERL_CPANM_OPT="--quiet --notest"
+if [ -e "$BUILD_DIR/.perl-version" ]; then
+    PERL_VERSION=`cat "$BUILD_DIR/.perl-version"`
+    PERL_PACKAGE="$PERLURL/perl-$PERL_VERSION.tgz"
+    status "Vendoring perl $PERL_VERSION"
+    mkdir -p "$BUILD_DIR/vendor/perl"
+    curl -sL $PERL_PACKAGE | tar xzf - -C "$BUILD_DIR/vendor/perl"
+    export PATH="$BUILD_DIR/vendor/perl/bin:$PATH"
+    echo "export PATH=\"\$HOME/vendor/perl/bin:\$PATH\";" > $BUILD_DIR/.profile.d/buildpack_vendor_perl.sh
+fi
 if [ -e "$ENV_DIR/BUILDPACK_CPAN_MIRROR" ]; then
   BUILDPACK_CPAN_MIRROR=`cat $ENV_DIR/BUILDPACK_CPAN_MIRROR`
   status "Using CPAN mirror $BUILDPACK_CPAN_MIRROR"
