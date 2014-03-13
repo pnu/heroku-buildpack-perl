@@ -63,18 +63,18 @@ eval $(perl -Ilocal/lib/perl5 -Mlocal::lib=local 2>&1 | indent)
 if [ -e cpanfile.snapshot ]; then
   if ! command -v carton >/dev/null 2>&1; then
     status "Installing carton"
-    cpanm Carton 2>&1 | indent
+    perl -S cpanm Carton 2>&1 | indent
   fi
   status "Installing dependencies (carton)"
-  carton install --deployment --cached 2>&1 | indent
+  perl -S carton install --deployment --cached 2>&1 | indent
   rm -rf vendor/cache 2>&1
 fi
 
 status "Installing dependencies (cpanm)"
-cpanm --installdeps . 2>&1 | indent
+perl -S cpanm --installdeps . 2>&1 | indent
 
 status "Installing Starman"
-cpanm Starman 2>&1 | indent
+perl -S cpanm Starman 2>&1 | indent
 
 source $BUILDPACK_DIR/bin/steps/hooks/post_compile $ENV_DIR
 

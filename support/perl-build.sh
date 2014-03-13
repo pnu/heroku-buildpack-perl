@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 git clone git://github.com/tokuhirom/Perl-Build.git perl-build
-perl-build/perl-build $PERL_VERSION /app/vendor/perl
+perl-build/perl-build -Duserelocatableinc -j 4 $PERL_VERSION /app/vendor/perl
 tar czf perl-$PERL_VERSION.tgz -C /app/vendor/perl .
 
 git clone https://github.com/s3tools/s3cmd
