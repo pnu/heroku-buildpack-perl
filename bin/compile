@@ -69,7 +69,7 @@ fi
 
 status "Bootstrapping cpanm and local::lib"
 curl --silent $CPANMURL | perl - --local-lib local App::cpanminus local::lib 2>&1 | indent
-eval $(perl -Ilocal/lib/perl5 -Mlocal::lib=local 2>&1 | indent)
+eval $(perl -Ilocal/lib/perl5 -Mlocal::lib=local 2> /dev/null)
 
 if [ -e cpanfile.snapshot ]; then
   if ! command -v carton >/dev/null 2>&1; then
