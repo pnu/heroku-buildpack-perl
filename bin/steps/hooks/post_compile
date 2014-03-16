@@ -5,5 +5,5 @@ ENV_DIR=$1
 if [ -f bin/post_compile ]; then
     status "Running post-compile hook"
     chmod +x bin/post_compile
-    bin/post_compile $ENV_DIR
+    bin/post_compile $ENV_DIR 2>&1 | indent
 fi

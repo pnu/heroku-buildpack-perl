@@ -18,9 +18,9 @@ export PERL_CPANM_OPT="--quiet --notest"
 if [ -e "$BUILD_DIR/.perl-version" ]; then
     PERL_VERSION=`cat "$BUILD_DIR/.perl-version"`
     PERL_PACKAGE="$PERLURL/perl-$PERL_VERSION.tgz"
-    status "Vendoring perl $PERL_VERSION"
+    status "Vendoring $PERL_PACKAGE"
     mkdir -p "$BUILD_DIR/vendor/perl"
-    curl -sL $PERL_PACKAGE | tar xzf - -C "$BUILD_DIR/vendor/perl"
+    curl -sL $PERL_PACKAGE | tar xzf - -C "$BUILD_DIR/vendor/perl" &> /dev/null
     export PATH="$BUILD_DIR/vendor/perl/bin:$PATH"
     echo "export PATH=\"\$HOME/vendor/perl/bin:\$PATH\";" > $BUILD_DIR/.profile.d/buildpack_vendor_perl.sh
 fi

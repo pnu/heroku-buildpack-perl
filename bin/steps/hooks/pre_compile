@@ -5,5 +5,5 @@ ENV_DIR=$1
 if [ -f bin/pre_compile ]; then
     status "Running pre-compile hook"
     chmod +x bin/pre_compile
-    bin/pre_compile $ENV_DIR
+    bin/pre_compile $ENV_DIR 2>&1 | indent
 fi
