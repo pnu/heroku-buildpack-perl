@@ -23,6 +23,17 @@ if [ -e "$BUILD_DIR/.perl-version" ]; then
     curl -sL $PERL_PACKAGE | tar xzf - -C "$BUILD_DIR/vendor/perl" &> /dev/null
     export PATH="$BUILD_DIR/vendor/perl/bin:$PATH"
     echo "export PATH=\"\$HOME/vendor/perl/bin:\$PATH\";" > $BUILD_DIR/.profile.d/buildpack_vendor_perl.sh
+    if [ -e "$BUILD_DIR/.perl-libs" ]; then
+        for package in `cat $BUILD_DIR/.perl-libs`; do
+            PERL_PACKAGE="$PERLURL/perl-$PERL_VERSION-$package.tgz"
+            status "Vendoring $PERL_PACKAGE"
+            curl -sL $PERL_PACKAGE | tar xzf - -C "$BUILD_DIR/vendor/perl" &> /dev/null
+        done
+    else
+        PERL_PACKAGE="$PERLURL/perl-$PERL_VERSION-extras.tgz"
+        status "Vendoring $PERL_PACKAGE (optional default)"
+        curl -sL $PERL_PACKAGE | tar xzf - -C "$BUILD_DIR/vendor/perl" &> /dev/null || echo "not found, continuing build" | indent
+    fi
 fi
 if [ -e "$ENV_DIR/BUILDPACK_CPAN_MIRROR" ]; then
   BUILDPACK_CPAN_MIRROR=`cat $ENV_DIR/BUILDPACK_CPAN_MIRROR`
