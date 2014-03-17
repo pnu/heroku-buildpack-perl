@@ -16,9 +16,6 @@ curl -sL $CPANMURL | bin/perl - --quiet --notest App::cpanminus
 bin/cpanm --quiet --notest File::HomeDir ## can't find root's home directory on Heroku
 bin/cpanm --quiet Task::Moose
 bin/cpanm --quiet Dancer Mojolicious Task::Catalyst Plack
-if [ $PERL_VERSION = "5.10.1" ]; then
-    bin/cpanm --quiet --notest Twiggy ## t/disconnect.t fails on 5.10.1
-fi
 bin/cpanm --quiet Starman Twiggy Carton local::lib
 bin/cpanm --quiet DBI DBIx::Class DBIx::Class::Schema::Loader SQL::Translator
 bin/cpanm --quiet CHI Redis DBD::Pg
