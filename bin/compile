@@ -56,9 +56,6 @@ if [ -d "$CACHE_DIR/perl/local" ]; then
     status "Restoring local directory from cache"
     cp -R "$CACHE_DIR/perl/local" . &> /dev/null || true
   fi
-elif [ -d "$CACHE_DIR/local" ]; then
-  status "Restoring local directory from cache (legacy cache layout)"
-  cp -R "$CACHE_DIR/local" . &> /dev/null || true
 fi
 
 if [ -e "$ENV_DIR/LOCALURL" ]; then
