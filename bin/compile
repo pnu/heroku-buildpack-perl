@@ -18,11 +18,7 @@ if [ -e "$BUILD_DIR/.perl-version" ]; then
 fi
 PERL_VERSION=${PERL_VERSION-'5.18.2'}
 PERL_VERSION=${BUILDPACK_PERL_VERSION-$PERL_VERSION}
-if [ -e "$BUILD_DIR/.perl-libs" ]; then
-    PERL_LIBS=`cat "$BUILD_DIR/.perl-libs"`
-fi
-PERL_LIBS=${PERL_LIBS-'extras'}
-PERL_LIBS=${BUILDPACK_PERL_LIBS-$PERL_LIBS}
+PERL_LIBS=${BUILDPACK_PERL_LIBS-'extras'}
 PERL_URL=${BUILDPACK_PERL_URL:-'https://heroku-buildpack-perl.s3.amazonaws.com'}
 CPANM_URL=${BUILDPACK_CPANM_URL:-"$PERL_URL/cpanm"}
 CPANM_OPT=${BUILDPACK_CPANM_OPT-"--quiet --notest"}
