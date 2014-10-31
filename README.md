@@ -51,13 +51,14 @@ Script `support/perl-build.sh` can be used to build your own perl versions.
 The build script runs on Heroku, and uploads the compiled package to a S3 bucket.
 S3 credentials, bucket name and perl version are specified in the environment.
 
-    $ heroku create     # create a build server, eg. your-app-1234
-    $ heroku config:set AWS_ACCESS_KEY_ID="xxx" AWS_SECRET_ACCESS_KEY="yyy" S3_BUCKET_NAME="heroku-buildpack-perl" HEROKU_STACK="cedar-14" --app your-app-1234
-    $ heroku run 'curl -sL https://raw.github.com/pnu/heroku-buildpack-perl/master/support/perl-build.sh | PERL_VERSION=5.20.1 bash' --app your-app-1234
+    heroku create your-builder-app-1234 --stack cedar-14
+    heroku addons:add papertrail --app your-builder-app-1234
+    heroku config:set AWS_ACCESS_KEY_ID="xxx" AWS_SECRET_ACCESS_KEY="yyy" S3_BUCKET_NAME="heroku-buildpack-perl" HEROKU_STACK="cedar-14" --app your-builder-app-1234
+    heroku run:detached --size 2x 'curl -sL https://raw.github.com/pnu/heroku-buildpack-perl/master/support/perl-build.sh | PERL_VERSION=5.20.1 bash' --app your-builder-app-1234
     [...]
-    $ heroku destroy --app your-app-1234 --confirm your-app-1234
+    heroku destroy --app your-builder-app-1234 --confirm your-builder-app-1234
 
-You can use the same build server to build multiple perl versions concurrently.
+You can use the same build server to build multiple perl versions concurrently. After perl binary has been compiled, use perl-build-extras.sh to create a package of prebuilt libraries for the same perl version. By default the buildpack will vendor this library package to avoid timeouts in slug compilation.
 
 Prebuilt libraries
 ------------------
