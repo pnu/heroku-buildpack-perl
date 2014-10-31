@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
+HEROKU_STACK=${HEROKU_STACK-'cedar'}
+
 git clone git://github.com/tokuhirom/Perl-Build.git perl-build
 perl-build/perl-build -Duserelocatableinc -j 4 $PERL_VERSION /app/vendor/perl
 tar czf perl-$PERL_VERSION.tgz -C /app/vendor/perl .
@@ -16,4 +18,4 @@ secret_key = $AWS_SECRET_ACCESS_KEY
 use_https = True
 EOF
 
-./s3cmd put --acl-public ~/perl-$PERL_VERSION.tgz s3://$S3_BUCKET_NAME
+./s3cmd put --acl-public ~/perl-$PERL_VERSION.tgz s3://$S3_BUCKET_NAME/$HEROKU_STACK/

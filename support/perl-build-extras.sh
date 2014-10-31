@@ -3,12 +3,13 @@ set -e
 
 CPANMURL='https://raw.github.com/miyagawa/cpanminus/master/cpanm'
 VENDOR_DIR='/app/vendor/perl'
+HEROKU_STACK=${HEROKU_STACK-'cedar'}
 
 rm -rf $VENDOR_DIR
 mkdir -p $VENDOR_DIR
 
 cd $VENDOR_DIR
-curl -sL "$S3_BUCKET_NAME.s3.amazonaws.com/perl-$PERL_VERSION.tgz" | tar xzf -
+curl -sL "$S3_BUCKET_NAME.s3.amazonaws.com/$HEROKU_STACK/perl-$PERL_VERSION.tgz" | tar xzf -
 find . -exec touch {} \;
 sleep 1
 touch .
@@ -34,4 +35,4 @@ secret_key = $AWS_SECRET_ACCESS_KEY
 use_https = True
 EOF
 
-./s3cmd put --acl-public ~/perl-$PERL_VERSION-extras.tgz s3://$S3_BUCKET_NAME
+./s3cmd put --acl-public ~/perl-$PERL_VERSION-extras.tgz s3://$S3_BUCKET_NAME/$HEROKU_STACK/
