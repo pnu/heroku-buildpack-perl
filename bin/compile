@@ -47,6 +47,12 @@ status "Current perl version is $CURRENT_PERL_VERSION"
 
 cd $BUILD_DIR
 
+if [ `which sha256sum` ]; then
+    RELEASE_UUID=`dd if=/dev/urandom bs=1k count=1k 2>/dev/null | sha256sum -b | cut -f1 -d' '`
+    echo "export RELEASE_UUID=\"$RELEASE_UUID\";" > $BUILD_DIR/.profile.d/buildpack_release_uuid.sh
+    status "Random RELEASE_UUID=$RELEASE_UUID"
+fi
+
 source $BP_DIR/bin/steps/hooks/pre_compile $ENV_DIR
 
 if [ -d "$CACHE_DIR/perl/local" ]; then
