@@ -16,7 +16,7 @@ export_env_dir $ENV_DIR '^BUILDPACK_' ''
 if [ -e "$BUILD_DIR/.perl-version" ]; then
     PERL_VERSION=`cat "$BUILD_DIR/.perl-version"`
 fi
-PERL_VERSION=${PERL_VERSION-'5.20.0'}
+PERL_VERSION=${PERL_VERSION-'5.20.1'}
 PERL_VERSION=${BUILDPACK_PERL_VERSION-$PERL_VERSION}
 PERL_LIBS=${BUILDPACK_PERL_LIBS-'extras'}
 PERL_URL=${BUILDPACK_PERL_URL:-"https://heroku-buildpack-perl.s3.amazonaws.com/$STACK"}
