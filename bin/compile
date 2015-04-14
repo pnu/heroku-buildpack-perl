@@ -19,7 +19,10 @@ fi
 PERL_VERSION=${PERL_VERSION-'5.20.1'}
 PERL_VERSION=${BUILDPACK_PERL_VERSION-$PERL_VERSION}
 PERL_LIBS=${BUILDPACK_PERL_LIBS-'extras'}
-PERL_URL=${BUILDPACK_PERL_URL:-"https://heroku-buildpack-perl.s3.amazonaws.com/$STACK"}
+if [ -n "$STACK" ]; then
+    STACK="/$STACK"
+fi
+PERL_URL=${BUILDPACK_PERL_URL:-"https://heroku-buildpack-perl.s3.amazonaws.com$STACK"}
 CPANM_URL=${BUILDPACK_CPANM_URL:-"$PERL_URL/cpanm"}
 CPANM_OPT=${BUILDPACK_CPANM_OPT-"--quiet --notest"}
 if [ -n "$BUILDPACK_CPAN_MIRROR" ]; then
