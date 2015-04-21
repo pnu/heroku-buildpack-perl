@@ -16,7 +16,13 @@ export_env_dir $ENV_DIR '^BUILDPACK_' ''
 if [ -e "$BUILD_DIR/.perl-version" ]; then
     PERL_VERSION=`cat "$BUILD_DIR/.perl-version"`
 fi
-PERL_VERSION=${PERL_VERSION-'5.20.1'}
+if [ -n "$STACK" ] && [ "$STACK" != "cedar" ]; then
+    CACHE_DIR="$CACHE_DIR/perl/$STACK"
+    PERL_VERSION=${PERL_VERSION-'5.20.1'}
+else
+    CACHE_DIR="$CACHE_DIR/perl"
+    PERL_VERSION=${PERL_VERSION-'5.20.1'}
+fi
 PERL_VERSION=${BUILDPACK_PERL_VERSION-$PERL_VERSION}
 PERL_LIBS=${BUILDPACK_PERL_LIBS-'extras'}
 PERL_URL=${BUILDPACK_PERL_URL:-"https://heroku-buildpack-perl.s3.amazonaws.com/$STACK"}
@@ -55,12 +61,12 @@ fi
 
 source $BP_DIR/bin/steps/hooks/pre_compile $ENV_DIR
 
-if [ -d "$CACHE_DIR/perl/local" ]; then
-  if [ -f "$CACHE_DIR/perl/.perl-version" ] && [ $(cat $CACHE_DIR/perl/.perl-version) != "$CURRENT_PERL_VERSION" ]; then
+if [ -d "$CACHE_DIR/local" ]; then
+  if [ -f "$CACHE_DIR/.perl-version" ] && [ $(cat $CACHE_DIR/.perl-version) != "$CURRENT_PERL_VERSION" ]; then
     status "Perl version changed, not restoring local directory from cache"
   else
-    status "Restoring local directory from cache"
-    cp -R "$CACHE_DIR/perl/local" . &> /dev/null || true
+    status "Restoring local directory from cache $CACHE_DIR"
+    cp -R "$CACHE_DIR/local" . &> /dev/null || true
   fi
 fi
 
@@ -93,10 +99,10 @@ perl -S cpanm Starman 2>&1 | indent
 
 source $BP_DIR/bin/steps/hooks/post_compile $ENV_DIR
 
-rm -rf $CACHE_DIR/perl
-mkdir -p $CACHE_DIR/perl
+rm -rf $CACHE_DIR &> /dev/null || true
+mkdir -p $CACHE_DIR &> /dev/null || true
 if [ -d "local" ]; then
-  status "Caching local directory for future builds"
-  cp -R local $CACHE_DIR/perl/
+  status "Caching local to $CACHE_DIR/"
+  cp -R local $CACHE_DIR/
 fi
-echo $CURRENT_PERL_VERSION >$CACHE_DIR/perl/.perl-version
+echo $CURRENT_PERL_VERSION >$CACHE_DIR/.perl-version
