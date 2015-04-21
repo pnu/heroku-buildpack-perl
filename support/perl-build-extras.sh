@@ -3,7 +3,7 @@ set -e
 
 CPANMURL='https://raw.github.com/miyagawa/cpanminus/master/cpanm'
 VENDOR_DIR='/app/vendor/perl'
-HEROKU_STACK=${HEROKU_STACK-'cedar'}
+HEROKU_STACK=${HEROKU_STACK-'cedar-14'}
 
 rm -rf $VENDOR_DIR
 mkdir -p $VENDOR_DIR

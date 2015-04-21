@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-HEROKU_STACK=${HEROKU_STACK-'cedar'}
+HEROKU_STACK=${HEROKU_STACK-'cedar-14'}
 
 git clone git://github.com/tokuhirom/Perl-Build.git perl-build
 perl-build/perl-build -Duserelocatableinc -j 4 $PERL_VERSION /app/vendor/perl
