@@ -5,6 +5,9 @@ CPANMURL='https://raw.github.com/miyagawa/cpanminus/master/cpanm'
 VENDOR_DIR='/app/vendor/perl'
 HEROKU_STACK=${HEROKU_STACK-'cedar-14'}
 
+export AUTOMATED_TESTING=1      ## VM::EC2 to skip network tests
+export NONINTERACTIVE_TESTING=1 ## http://www.dagolden.com/index.php/2098/the-annotated-lancaster-consensus/
+
 rm -rf $VENDOR_DIR
 mkdir -p $VENDOR_DIR
 
@@ -14,12 +17,21 @@ find . -exec touch {} \;
 sleep 1
 touch .
 curl -sL $CPANMURL | bin/perl - --quiet --notest App::cpanminus
+bin/cpanm --quiet --installdeps File::HomeDir
 bin/cpanm --quiet --notest File::HomeDir ## can't find root's home directory on Heroku
+bin/cpanm --quiet --installdeps Term::ReadKey
+bin/cpanm --quiet --notest Term::ReadKey
+bin/cpanm --quiet --installdeps Data::Dump::Streamer
+bin/cpanm --quiet --notest Data::Dump::Streamer ## 2.38 fails on 5.22.0
+bin/cpanm --quiet --installdeps LWP::Protocol::https
+bin/cpanm --quiet --notest LWP::Protocol::https ## https://rt.cpan.org/Public/Bug/Display.html?id=104150
+bin/cpanm --quiet --installdeps HTTP::Server::Simple
+bin/cpanm --quiet --notest HTTP::Server::Simple ## 0.50 getaddrinfo / localhost fails on cedar stack
 bin/cpanm --quiet Task::Moose MooseX::Daemonize Mouse
 bin/cpanm --quiet Dancer Dancer2 Mojolicious Catalyst Catalyst::Devel
 bin/cpanm --quiet Plack Starman Twiggy Carton local::lib
 bin/cpanm --quiet DBI DBIx::Class DBIx::Class::Schema::Loader DBIx::Class::Migration SQL::Translator
-bin/cpanm --quiet CHI Redis DBD::Pg Net::Amazon::S3 LWP::Protocol::https
+bin/cpanm --quiet CHI Redis DBD::Pg Net::Amazon::S3
 bin/cpanm --quiet XML::LibXML MIME::Types XML::Atom XML::RSS
 
 find . -newercm . | tar czf ~/perl-$PERL_VERSION-extras.tgz --no-recursion --files-from=/dev/stdin
