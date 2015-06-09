@@ -18,7 +18,7 @@ if [ -e "$BUILD_DIR/.perl-version" ]; then
 fi
 if [ -n "$STACK" ] && [ "$STACK" != "cedar" ]; then
     CACHE_DIR="$CACHE_DIR/perl/$STACK"
-    PERL_VERSION=${PERL_VERSION-'5.20.1'}
+    PERL_VERSION=${PERL_VERSION-'5.22.0'}
 else
     CACHE_DIR="$CACHE_DIR/perl"
     PERL_VERSION=${PERL_VERSION-'5.20.1'}
