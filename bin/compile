@@ -25,11 +25,8 @@ else
 fi
 PERL_VERSION=${BUILDPACK_PERL_VERSION-$PERL_VERSION}
 PERL_LIBS=${BUILDPACK_PERL_LIBS-'extras'}
-if [ -n "$STACK" ]; then
-    STACK="/$STACK"
-fi
-PERL_URL=${BUILDPACK_PERL_URL:-"https://heroku-buildpack-perl.s3.amazonaws.com$STACK"}
-CPANM_URL=${BUILDPACK_CPANM_URL:-"$PERL_URL/cpanm"}
+PERL_URL=${BUILDPACK_PERL_URL:-"https://heroku-buildpack-perl.s3.amazonaws.com/$STACK"}
+CPANM_URL=${BUILDPACK_CPANM_URL:-"${PERL_URL%/}/cpanm"}
 CPANM_OPT=${BUILDPACK_CPANM_OPT-"--quiet --notest"}
 if [ -n "$BUILDPACK_CPAN_MIRROR" ]; then
   status "Using CPAN mirror $BUILDPACK_CPAN_MIRROR"
@@ -38,14 +35,14 @@ fi
 export PERL_CPANM_OPT=$CPANM_OPT
 
 if [ -n "$PERL_VERSION" ] && [ "$PERL_VERSION" != "system" ]; then
-    PERL_PACKAGE="$PERL_URL/perl-$PERL_VERSION.tgz"
+    PERL_PACKAGE="${PERL_URL%/}/perl-$PERL_VERSION.tgz"
     status "Vendoring $PERL_PACKAGE"
     mkdir -p "$BUILD_DIR/vendor/perl"
     curl -sL $PERL_PACKAGE | tar xzf - -C "$BUILD_DIR/vendor/perl" &> /dev/null
     export PATH="$BUILD_DIR/vendor/perl/bin:$PATH"
     echo "export PATH=\"\$HOME/vendor/perl/bin:\$PATH\";" > $BUILD_DIR/.profile.d/buildpack_vendor_perl.sh
     for package in $PERL_LIBS; do
-        PERL_PACKAGE="$PERL_URL/perl-$PERL_VERSION-$package.tgz"
+        PERL_PACKAGE="${PERL_URL%/}/perl-$PERL_VERSION-$package.tgz"
         status "Vendoring $PERL_PACKAGE"
         curl -sL $PERL_PACKAGE | tar xzf - -C "$BUILD_DIR/vendor/perl" &> /dev/null
     done
