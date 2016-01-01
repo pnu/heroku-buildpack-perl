@@ -4,9 +4,6 @@ cat << EOF
 ---
 addons:
 config_vars:
-  LD_LIBRARY_PATH: /app/local/lib:/app/vendor/lib
-  PATH: /app/local/bin:/app/vendor/bin:/usr/local/bin:/usr/bin:/bin
-  PERL5LIB: /app/local/lib/perl5:/app/vendor/lib/perl5
 default_process_types:
   web: starman --preload-app --port \$PORT
 EOF

@@ -40,7 +40,7 @@ if [ -n "$PERL_VERSION" ] && [ "$PERL_VERSION" != "system" ]; then
     mkdir -p "$BUILD_DIR/vendor/perl"
     curl -sL $PERL_PACKAGE | tar xzf - -C "$BUILD_DIR/vendor/perl" &> /dev/null
     export PATH="$BUILD_DIR/vendor/perl/bin:$PATH"
-    echo "export PATH=\"\$HOME/vendor/perl/bin:\$PATH\";" > $BUILD_DIR/.profile.d/buildpack_vendor_perl.sh
+    echo "export PATH=\"\$HOME/vendor/perl/bin:\$PATH\";" > $BUILD_DIR/.profile.d/buildpack-perl_10_vendor-perl-path.sh
     for package in $PERL_LIBS; do
         PERL_PACKAGE="${PERL_URL%/}/perl-$PERL_VERSION-$package.tgz"
         status "Vendoring $PERL_PACKAGE"
@@ -55,7 +55,7 @@ cd $BUILD_DIR
 
 if [ `which sha256sum` ]; then
     RELEASE_UUID=`dd if=/dev/urandom bs=1k count=1k 2>/dev/null | sha256sum -b | cut -f1 -d' '`
-    echo "export RELEASE_UUID=\"$RELEASE_UUID\";" > $BUILD_DIR/.profile.d/buildpack_release_uuid.sh
+    echo "export RELEASE_UUID=\"$RELEASE_UUID\";" > $BUILD_DIR/.profile.d/buildpack-perl_30_release_uuid.sh
     status "Random RELEASE_UUID=$RELEASE_UUID"
 fi
 
@@ -80,6 +80,7 @@ fi
 status "Bootstrapping cpanm and local::lib"
 curl -sL $CPANM_URL | perl - --local-lib local App::cpanminus local::lib 2>&1 | indent
 eval $(perl -Ilocal/lib/perl5 -Mlocal::lib=local 2> /dev/null)
+echo 'eval $(perl -Ilocal/lib/perl5 -Mlocal::lib=local 2> /dev/null)' > $BUILD_DIR/.profile.d/buildpack-perl_20_local-lib.sh
 
 if [ -e cpanfile.snapshot ]; then
   if ! command -v carton >/dev/null 2>&1; then
