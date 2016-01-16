@@ -1,3 +1,5 @@
+function join { local IFS="$1"; shift; echo "$*"; }
+
 error() {
   echo " !     $*" >&2
   exit 1

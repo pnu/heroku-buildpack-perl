@@ -4,6 +4,9 @@
 if [ -f $1/app.psgi ]; then
   echo "Perl/PSGI"
   exit 0
+elif [ -f $1/META.info ] || [ -f $1/.perl6-version ]; then
+  echo "Perl6/META.info"
+  exit 0
 else
   exit 1
 fi

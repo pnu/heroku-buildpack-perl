@@ -1,88 +1,160 @@
 #!/usr/bin/env bash
+# bin/compile <build-dir> <cache-dir> <env-dir>
 
-set -e            # fail fast
-set -o pipefail   # don't ignore exit codes when piping output
+### Configure environment
 
-BUILD_DIR=$1
-CACHE_DIR=$2
-ENV_DIR=$3
-BP_DIR=$(cd $(dirname $0); cd ..; pwd)
+set -o errexit  # always exit on error
+set -o pipefail # do not ignore exit codes when piping output
+set -o nounset  # fail on unset variables
+unset GIT_DIR   # Avoid GIT_DIR leak from previous build steps
+
+### Constants
+
+VENDOR_BASE_URL="https://heroku-buildpack-perl.s3.amazonaws.com/$STACK"
+DEFAULT_PERL_VERSION='5.22.0'
+DEFAULT_PERL_LIBS='extras'
+DEFAULT_CPANM_OPT='--quiet --notest'
+DEFAULT_PERL6_VERSION='moar-nom'
+DEFAULT_PERL6_LIBS='star'
+CACHE_PREFIX='buildpack-perl'
+
+### Configure directories
+
+BUILD_DIR=${1:-}
+CACHE_DIR=${2:-}
+ENV_DIR=${3:-}
+BP_DIR=$(cd $(dirname ${0:-}); cd ..; pwd)
+
+### Load dependencies
 
 source $BP_DIR/bin/common.sh
 trap cat_cpanm_build_log ERR
-mkdir -p $BUILD_DIR/.profile.d
 
-export_env_dir $ENV_DIR '^BUILDPACK_' ''
-if [ -e "$BUILD_DIR/.perl-version" ]; then
-    PERL_VERSION=`cat "$BUILD_DIR/.perl-version"`
-fi
-if [ -n "$STACK" ] && [ "$STACK" != "cedar" ]; then
-    CACHE_DIR="$CACHE_DIR/perl/$STACK"
-    PERL_VERSION=${PERL_VERSION-'5.22.0'}
-else
-    CACHE_DIR="$CACHE_DIR/perl"
-    PERL_VERSION=${PERL_VERSION-'5.20.1'}
-fi
-PERL_VERSION=${BUILDPACK_PERL_VERSION-$PERL_VERSION}
-PERL_LIBS=${BUILDPACK_PERL_LIBS-'extras'}
-PERL_URL=${BUILDPACK_PERL_URL:-"https://heroku-buildpack-perl.s3.amazonaws.com/$STACK"}
-CPANM_URL=${BUILDPACK_CPANM_URL:-"${PERL_URL%/}/cpanm"}
-CPANM_OPT=${BUILDPACK_CPANM_OPT-"--quiet --notest"}
-if [ -n "$BUILDPACK_CPAN_MIRROR" ]; then
-  status "Using CPAN mirror $BUILDPACK_CPAN_MIRROR"
-  CPANM_OPT="$CPANM_OPT --mirror-only --mirror '$BUILDPACK_CPAN_MIRROR'"
-fi
-export PERL_CPANM_OPT=$CPANM_OPT
-
-if [ -n "$PERL_VERSION" ] && [ "$PERL_VERSION" != "system" ]; then
-    PERL_PACKAGE="${PERL_URL%/}/perl-$PERL_VERSION.tgz"
-    status "Vendoring $PERL_PACKAGE"
-    mkdir -p "$BUILD_DIR/vendor/perl"
-    curl -sL $PERL_PACKAGE | tar xzf - -C "$BUILD_DIR/vendor/perl" &> /dev/null
-    export PATH="$BUILD_DIR/vendor/perl/bin:$PATH"
-    echo "export PATH=\"\$HOME/vendor/perl/bin:\$PATH\";" > $BUILD_DIR/.profile.d/buildpack-perl_10_vendor-perl-path.sh
-    for package in $PERL_LIBS; do
-        PERL_PACKAGE="${PERL_URL%/}/perl-$PERL_VERSION-$package.tgz"
-        status "Vendoring $PERL_PACKAGE"
-        curl -sL $PERL_PACKAGE | tar xzf - -C "$BUILD_DIR/vendor/perl" &> /dev/null
-    done
-fi
-
-CURRENT_PERL_VERSION=$( eval $(perl -V:PERL_.*:); echo "$PERL_REVISION.$PERL_VERSION.$PERL_SUBVERSION" )
-status "Current perl version is $CURRENT_PERL_VERSION"
+### Setup HOME
 
 cd $BUILD_DIR
 
-if [ `which sha256sum` ]; then
-    RELEASE_UUID=`dd if=/dev/urandom bs=1k count=1k 2>/dev/null | sha256sum -b | cut -f1 -d' '`
-    echo "export RELEASE_UUID=\"$RELEASE_UUID\";" > $BUILD_DIR/.profile.d/buildpack-perl_30_release_uuid.sh
-    status "Random RELEASE_UUID=$RELEASE_UUID"
+### Apply configuration overrides and defaults
+
+export_env_dir $ENV_DIR '^BUILDPACK_' ''
+
+if [ -f .perl-version ]; then
+    target_perl_version=$(cat .perl-version)
+fi
+target_perl_version=${target_perl_version-$DEFAULT_PERL_VERSION}
+target_perl_version=${BUILDPACK_PERL_VERSION-$target_perl_version}
+perl_libs=${BUILDPACK_PERL_LIBS-$DEFAULT_PERL_LIBS}
+perl_url=${BUILDPACK_PERL_URL:-$VENDOR_BASE_URL}
+cpanm_url=${BUILDPACK_CPANM_URL:-"${perl_url%/}/cpanm"}
+cpanm_opt=${BUILDPACK_CPANM_OPT-$DEFAULT_CPANM_OPT}
+if [ -n "${BUILDPACK_CPAN_MIRROR:-}" ]; then
+  status "Using CPAN mirror $BUILDPACK_CPAN_MIRROR"
+  cpanm_opt="$cpanm_opt --mirror-only --mirror '$BUILDPACK_CPAN_MIRROR'"
+fi
+export PERL_CPANM_OPT=$cpanm_opt
+if [ -f META.info ] || [ -f .perl6-version ]; then
+    if [ -f .perl6-version ]; then target_perl6_version=$(cat .perl6-version); fi
+    cached_perl6_version=$(cat $CACHE_DIR/$CACHE_PREFIX/.perl6-version 2> /dev/null) || true
+    target_perl6_version=${target_perl6_version-$cached_perl6_version}
+    target_perl6_version=${target_perl6_version:-$DEFAULT_PERL6_VERSION}
+fi
+target_perl6_version=${BUILDPACK_PERL6_VERSION-${target_perl6_version:-}}
+perl6_libs=${BUILDPACK_PERL6_LIBS-$DEFAULT_PERL6_LIBS}
+
+### Build the slug
+
+rm -rf .profile.d; mkdir .profile.d
+
+if [ -n "$target_perl_version" ] && [ "$target_perl_version" != "system" ]; then
+    package_url="${perl_url%/}/perl-$target_perl_version.tgz"
+    status "Vendoring $package_url"
+    rm -rf vendor/perl; mkdir -p vendor/perl
+    curl -sL $package_url | tar xzf - -C "vendor/perl"
+    export PATH="$BUILD_DIR/vendor/perl/bin:$PATH"
+    echo 'export PATH="$HOME/vendor/perl/bin:$PATH"' > .profile.d/buildpack-perl_10_vendor-perl-path.sh
+    for package in $perl_libs; do
+        package_url="${perl_url%/}/perl-$target_perl_version-$package.tgz"
+        status "Vendoring $package_url"
+        curl -sL $package_url | tar xzf - -C "vendor/perl"
+    done
+fi
+
+current_perl_version=$( eval $(perl -V:PERL_.*:); echo "$PERL_REVISION.$PERL_VERSION.$PERL_SUBVERSION" )
+status "Current perl version is '$current_perl_version'"
+
+if [ -n "$target_perl6_version" ]; then
+    package_url="${perl_url%/}/perl6/rakudo-$target_perl6_version.tgz"
+    status "Vendoring $package_url"
+    rm -rf /app/vendor/perl6; mkdir -p /app/vendor/perl6; mkdir -p $HOME/.perl6
+    curl -sL $package_url | tar xzf - -C "/app/vendor/perl6"
+    chmod -R -w /app/vendor/perl6 # make repo not installable
+    export PATH="/app/vendor/perl6/bin:$PATH"
+    export PATH="/app/vendor/perl6/share/perl6/site/bin:$PATH"
+    current_perl6_version=$(perl6 -e'print $*PERL.compiler.version')
+    current_perl6_vm=$(perl6 -e'print $*VM.name')
+    current_perl6_home_repo_path=$(perl6 -e"given CompUnit::RepositoryRegistry.repository-for-name(<home>) { .can-install && say .writeable-path.abspath }")
+    export PATH="$current_perl6_home_repo_path/bin:$PATH"
+    ( cat <<'EOF'
+    function join { local IFS="$1"; shift; echo "$*"; }
+    export PATH="/app/vendor/perl6/bin:$PATH"
+    export PATH="/app/vendor/perl6/share/perl6/site/bin:$PATH"
+    current_perl6_home_repo_path=$(perl6 -e"given CompUnit::RepositoryRegistry.repository-for-name(<home>) { .can-install && say .writeable-path.path }")
+    export PATH="$current_perl6_home_repo_path/bin:$PATH"
+EOF
+    ) > .profile.d/buildpack-perl_11_rakudo.sh
+    for package in $perl6_libs; do
+        package_url="${perl_url%/}/perl6/rakudo-$current_perl6_vm-$current_perl6_version-$package.tgz"
+        status "Vendoring $package_url"
+        rm -rf /app/vendor/perl6-$package; mkdir -p /app/vendor/perl6-$package
+        curl -sL $package_url | tar xzf - -C "/app/vendor/perl6-$package" &> /dev/null
+        export PATH="/app/vendor/perl6-$package/bin:$PATH"
+        export PERL6LIB="$(join , inst#/app/vendor/perl6-$package ${PERL6LIB:-})"
+        echo "    package=$package" >> .profile.d/buildpack-perl_11_rakudo.sh
+        ( cat <<'EOF'
+        export PATH="/app/vendor/perl6-$package/bin:$PATH"
+        export PERL6LIB="$(join , inst#/app/vendor/perl6-$package ${PERL6LIB:-})"
+EOF
+        ) >> .profile.d/buildpack-perl_11_rakudo.sh
+    done
+    status "Current perl6 version is '$current_perl6_vm-$current_perl6_version'"
+    status "Current perl6 home repository is '$current_perl6_home_repo_path'"
+fi
+
+if [ $(which sha256sum) ] && [ $(which dd) ]; then
+    release_uuid=$(dd if=/dev/urandom bs=1k count=1k 2>/dev/null | sha256sum -b | cut -f1 -d' ')
+    echo "export RELEASE_UUID='$release_uuid'" > .profile.d/buildpack-perl_30_release_uuid.sh
+    status "RELEASE_UUID $release_uuid"
 fi
 
 source $BP_DIR/bin/steps/hooks/pre_compile $ENV_DIR
 
-if [ -d "$CACHE_DIR/local" ]; then
-  if [ -f "$CACHE_DIR/.perl-version" ] && [ $(cat $CACHE_DIR/.perl-version) != "$CURRENT_PERL_VERSION" ]; then
-    status "Perl version changed, not restoring local directory from cache"
-  else
-    status "Restoring local directory from cache $CACHE_DIR"
-    cp -R "$CACHE_DIR/local" . &> /dev/null || true
+mkdir -p local
+cache_path="$CACHE_PREFIX/$STACK/perl5-$current_perl_version/local"
+if [ -d "$CACHE_DIR/$cache_path" ]; then
+  status "Restoring <CACHE>/$cache_path -> local"
+  rm -rf local; cp -a $CACHE_DIR/$cache_path local
+fi
+if [ -n "$target_perl6_version" ]; then
+  cache_path="$CACHE_PREFIX/$STACK/perl6-$current_perl6_vm-$current_perl6_version/.perl6"
+  if [ -d "$CACHE_DIR/$cache_path" ]; then
+    status "Restoring <CACHE>/$cache_path -> $HOME/.perl6"
+    rm -rf $HOME/.perl6; cp -a $CACHE_DIR/$cache_path $HOME/.perl6
   fi
 fi
 
-if [ -e "$ENV_DIR/LOCALURL" ]; then
-  LOCALURL=`cat $ENV_DIR/LOCALURL`
-  status "Extracting prebuilt dependencies from $LOCALURL"
+if [ -f "$ENV_DIR/LOCALURL" ]; then
+  package_url=$(cat $ENV_DIR/LOCALURL)
+  status "Extracting $package_url -> local"
   mkdir -p local
-  curl -sL $LOCALURL | tar -xz -C local 2>&1 | indent
+  curl -sL $package_url | tar -xz -C local 2>&1 | indent
 fi
 
 status "Bootstrapping cpanm and local::lib"
-curl -sL $CPANM_URL | perl - --local-lib local App::cpanminus local::lib 2>&1 | indent
-eval $(perl -Ilocal/lib/perl5 -Mlocal::lib=local 2> /dev/null)
-echo 'eval $(perl -Ilocal/lib/perl5 -Mlocal::lib=local 2> /dev/null)' > $BUILD_DIR/.profile.d/buildpack-perl_20_local-lib.sh
+curl -sL $cpanm_url | perl - --local-lib local App::cpanminus local::lib 2>&1 | indent
+set +u; eval $(perl -Ilocal/lib/perl5 -Mlocal::lib=local 2> /dev/null); set -u
+echo 'eval $(perl -Ilocal/lib/perl5 -Mlocal::lib=local 2> /dev/null)' > .profile.d/buildpack-perl_20_local-lib.sh
 
-if [ -e cpanfile.snapshot ]; then
+if [ -f cpanfile.snapshot ]; then
   if ! command -v carton >/dev/null 2>&1; then
     status "Installing carton"
     perl -S cpanm Carton 2>&1 | indent
@@ -92,18 +164,44 @@ if [ -e cpanfile.snapshot ]; then
   rm -rf vendor/cache 2>&1
 fi
 
-status "Installing dependencies (cpanm)"
-perl -S cpanm --installdeps . 2>&1 | indent
+if [ -f cpanfile ]; then
+  status "Installing dependencies (cpanm)"
+  perl -S cpanm --installdeps . 2>&1 | indent
+fi
 
-status "Installing Starman"
-perl -S cpanm Starman 2>&1 | indent
+if [ -f app.psgi ]; then
+  status "Installing Starman"
+  perl -S cpanm Starman 2>&1 | indent
+fi
+
+if [ -f META.info ] && [ $(which panda) ]; then
+  status "Installing dependencies (panda)"
+  status "Installable repo-chain: $(perl6 -e'say $*REPO.repo-chain.grep(CompUnit::Repository::Installable)')"
+  panda installdeps . 2>&1 | indent
+fi
 
 source $BP_DIR/bin/steps/hooks/post_compile $ENV_DIR
 
-rm -rf $CACHE_DIR &> /dev/null || true
-mkdir -p $CACHE_DIR &> /dev/null || true
-if [ -d "local" ]; then
-  status "Caching local to $CACHE_DIR/"
-  cp -R local $CACHE_DIR/
+if [ -n "$target_perl6_version" ]; then
+  mkdir -p vendor
+  cp -a /app/vendor/perl6 vendor
+  cp -a /app/vendor/perl6-* vendor
+  cp -a $HOME/.perl6 .
 fi
-echo $CURRENT_PERL_VERSION >$CACHE_DIR/.perl-version
+
+rm -rf $CACHE_DIR/$CACHE_PREFIX; mkdir -p $CACHE_DIR/$CACHE_PREFIX
+if [ -d local ]; then
+  cache_path="$CACHE_PREFIX/$STACK/perl5-$current_perl_version"
+  status "Caching local -> <CACHE>/$cache_path/local"
+  mkdir -p              $CACHE_DIR/$cache_path
+  cp -a           local $CACHE_DIR/$cache_path
+fi
+if [ -d .perl6 ]; then
+  cache_path="$CACHE_PREFIX/$STACK/perl6-$current_perl6_vm-$current_perl6_version"
+  status "Caching .perl6 -> <CACHE>/$cache_path/.perl6"
+  mkdir -p               $CACHE_DIR/$cache_path
+  cp -a           .perl6 $CACHE_DIR/$cache_path
+fi
+if [ -n "$target_perl6_version" ]; then
+  echo "$current_perl6_vm-$current_perl6_version" > $CACHE_DIR/$CACHE_PREFIX/.perl6-version
+fi
