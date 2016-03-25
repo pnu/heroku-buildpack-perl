@@ -106,7 +106,8 @@ EOF
         package_url="${perl_url%/}/perl6/rakudo-$current_perl6_vm-$current_perl6_version-$package.tgz"
         status "Vendoring $package_url"
         rm -rf /app/vendor/perl6-$package; mkdir -p /app/vendor/perl6-$package
-        curl -sL $package_url | tar xzf - -C "/app/vendor/perl6-$package" &> /dev/null
+        curl -sL $package_url | tar xzf - -C "/app/vendor/perl6-$package" &> /dev/null || true
+        if [ ! -d "/app/vendor/perl6-$package/bin" ]; then continue; fi
         export PATH="/app/vendor/perl6-$package/bin:$PATH"
         export PERL6LIB="$(join , inst#/app/vendor/perl6-$package ${PERL6LIB:-})"
         echo "    package=$package" >> .profile.d/buildpack-perl_11_rakudo.sh
