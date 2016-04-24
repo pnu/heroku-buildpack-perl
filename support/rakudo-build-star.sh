@@ -11,6 +11,7 @@ PERL6_PACKAGE="${PERL_URL%/}/$DIST_NAME-$PERL6_VM-$PERL6_VERSION.tgz"
 BUILD_PATH="/tmp/build-rakudo-$$"
 VENDOR_PATH="/app/vendor/perl6"
 REPO_PATH="/app/vendor/perl6-$REPO_NAME"
+star_libs="XML::Writer JSON::Tiny Digest::MD5 HTTP::Status HTTP::Easy Template::Mojo DBIish URI LWP::Simple JSON::RPC MIME::Base64 PSGI File::Find Bailador HTTP::Server::Tiny"
 
 function join { local IFS="$1"; shift; echo "$*"; }
 
@@ -31,8 +32,9 @@ echo "Current perl6 version is '$CURRENT_PERL6_VERSION' on '$CURRENT_PERL6_VM'"
 cd $BUILD_PATH
 rm -rf $REPO_PATH; mkdir -p $REPO_PATH
 export PERL6LIB="inst#$REPO_PATH"
-panda --prefix="inst#$REPO_PATH" --force install Bailador
-panda --prefix="inst#$REPO_PATH" --force install Task::Star || { TASK_STAR_FAIL=1; }
+for package in $star_libs; do
+    panda --prefix="inst#$REPO_PATH" --force install $package || { TASK_STAR_FAIL=1; }
+done
 
 tar cvzf dist.tgz -C $REPO_PATH .
 
