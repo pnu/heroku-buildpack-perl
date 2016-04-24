@@ -18,7 +18,6 @@ Usage
     }
     baile( Int(%*ENV<PORT> || 5000) );
     ^D
-    $ echo "web: perl6 app.pl" >Procfile
     $ git add -A; git commit -m 'implement the app'
     $ heroku create --buildpack 'https://github.com/pnu/heroku-buildpack-perl#christmas'
     $ git push heroku master
@@ -33,7 +32,7 @@ https://heroku-buildpack-perl.s3.amazonaws.com/ (path prefix cedar-14/perl6/).
 You can specify the version with heroku configuration, or by adding file
 `.perl6-version` to the root directory of the project. Eg.
 
-    $ echo "moar-2016.03.39.gf.220.a.5.e" >.perl6-version
+    $ echo "moar-2016.04.15.gb.3.d.8169" >.perl6-version
     $ git add .perl6-version; git commit -m 'set perl6 version'
 
     or..
@@ -52,7 +51,7 @@ S3 credentials and bucket name are specified in the environment.
 
     $ heroku create     # create a build server, eg. your-app-1234
     $ heroku config:set AWS_ACCESS_KEY_ID="xxx" AWS_SECRET_ACCESS_KEY="yyy" S3_BUCKET_NAME="heroku-buildpack-rakudo" HEROKU_STACK="cedar-14" --app your-app-1234
-    $ heroku run 'curl -sL https://raw.github.com/pnu/heroku-buildpack-rakudo/master/support/rakudo-build.sh | RAKUDO_VERSION="nnn" bash' --app your-app-1234
+    $ heroku run 'curl -sL https://raw.github.com/pnu/heroku-buildpack-rakudo/christmas/support/rakudo-build.sh | RAKUDO_VERSION="nnn" bash' --app your-app-1234
     [...]
     $ heroku destroy --app your-app-1234 --confirm your-app-1234
 

@@ -1,9 +1,21 @@
 #!/usr/bin/env bash
 
-cat << EOF
+if [ -f $1/app.psgi ]; then
+    cat << EOF
 ---
 addons:
-config_vars:
 default_process_types:
   web: starman --preload-app --port \$PORT
 EOF
+  exit 0
+elif [ -f $1/META.info ] || [ -f $1/.perl6-version ]; then
+    cat << EOF
+---
+addons:
+default_process_types:
+  web: perl6 ./app.pl --port \$PORT
+EOF
+  exit 0
+else
+  exit 1
+fi
