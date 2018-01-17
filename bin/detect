@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 
-# this pack is valid for apps with a hello.txt in the root
 if [ -f $1/app.psgi ]; then
-  echo "Perl/PSGI"
-  exit 0
+  echo "perl/PSGI"
 elif [ -f $1/META.info ] || [ -f $1/.perl6-version ]; then
-  echo "Perl6/META.info"
-  exit 0
+  echo "perl6/META.info"
 else
-  exit 1
+  echo "perl"
 fi
+
+exit 0
